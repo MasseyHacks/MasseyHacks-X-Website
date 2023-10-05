@@ -1,1 +1,108 @@
 <!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Models Circle</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <script type="module">
+        import * as THREE from 'three';
+        import {
+            FBXLoader
+        } from 'three/examples/jsm/loaders/FBXLoader'
+
+        let scene, camera, renderer, models = [];
+        let angles = [];
+        let globalIndex = 0;
+        const totalModels = 5;  
+        const step = (2 * Math.PI) / totalModels;
+        const radius = 3;  
+
+        function init() {
+            scene = new THREE.Scene();
+
+            const gridHelper = new THREE.GridHelper(20, 20);
+            scene.add(gridHelper);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({
+                antialias: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); 
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1); 
+            directionalLight.position.set(0, 10, 10);
+            scene.add(directionalLight);
+
+            camera.position.z = 20;
+            camera.position.y = 10;
+            camera.lookAt(scene.position);
+
+            const loader = new FBXLoader();
+            const filenames = ["assets/Orca.fbx", "assets/Frog.fbx", "assets/Possum.fbx", "assets/Platypus.fbx", "assets/Panda.fbx"];
+
+            filenames.forEach((filename, index) => {
+                loader.load(filename, (object) => {
+                    object.scale.set(0.02, 0.02, 0.02);
+                    console.log(`Loaded: ${filename}`);
+                    models.push(object);
+                    scene.add(object);
+                    arrangeModelsInCircle();
+                }, undefined, (error) => {
+                    console.error(`Error loading ${filename}:`, error);
+                });
+            });
+
+            animate();
+        }
+
+        function arrangeModelsInCircle() {
+            let angle = step * globalIndex;
+            angles[globalIndex] = angle;
+            models[globalIndex].position.set(radius * Math.sin(angle), 0, radius * Math.cos(angle));
+            globalIndex++; 
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const rotationSpeed = 0.02;
+
+            models.forEach((model, index) => {
+                angles[index] += rotationSpeed;
+                model.position.set(radius * Math.sin(angles[index]), 0, radius * Math.cos(angles[index]));
+
+                model.lookAt(0, 0, 0);
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', function () {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+
+        init();
+    </script>
+</body>
+
+</html>
